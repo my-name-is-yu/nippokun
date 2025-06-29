@@ -1,17 +1,82 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My First Web App</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日報入力</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <h1>日報入力システムへようこそ</h1>
-  <p>開発中です。</p>
-  <p>ゆう</p>
+    <h1>日報入力</h1>
 
-  <script src="script.js"></script>
+    <form id="reportForm">
+        <div>
+            <label for="startTime">開始時刻:</label>
+            <input type="datetime-local" id="startTime" required>
+        </div>
+        <div>
+            <label for="endTime">終了時刻:</label>
+            <input type="datetime-local" id="endTime" required>
+        </div>
+        <button type="submit">記録する</button>
+    </form>
+
+    <div id="result">
+        </div>
+
+    <script>
+        // formの要素を取得
+        const reportForm = document.getElementById('reportForm');
+        // 結果を表示するdiv要素を取得
+        const resultDiv = document.getElementById('result');
+
+        // formが送信されたときの処理
+        reportForm.addEventListener('submit', async (event) => {
+            event.preventDefault(); // formのデフォルトの送信動作をキャンセル
+
+            // 入力された値を取得
+            const startTime = document.getElementById('startTime').value;
+            const endTime = document.getElementById('endTime').value;
+
+            // 結果表示エリアをクリア
+            resultDiv.innerHTML = '';
+
+            try {
+                // バックエンドのAPIにPOSTリクエストを送信
+                const response = await fetch('http://localhost:3000/api/record', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        startTime: startTime,
+                        endTime: endTime
+                    })
+                });
+
+                // レスポンスをJSONとしてパース
+                const data = await response.json();
+
+                if (response.ok) {
+                    // 成功した場合の処理
+                    const workHours = data.workHours;
+                    resultDiv.innerHTML = `
+                        <p style="color: green;">${data.message}</p>
+                        <p>本日の稼働時間: <strong>${workHours}</strong> 時間</p>
+                    `;
+                } else {
+                    // エラーが発生した場合の処理
+                    resultDiv.innerHTML = `<p style="color: red;">エラー: ${data.error}</p>`;
+                }
+
+            } catch (error) {
+                // 通信エラーなど
+                console.error('通信エラー:', error);
+                resultDiv.innerHTML = '<p style="color: red;">サーバーとの通信に失敗しました。</p>';
+            }
+        });
+    </script>
+
 </body>
 </html>
