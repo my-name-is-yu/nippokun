@@ -31,33 +31,45 @@ connection.connect((err) => {
 
 // 5. APIエンドポイントの作成
 // [POST] /api/record : 時刻を記録し、稼働時間を計算して返す
+// [POST] /api/record : 時刻を記録し、稼働時間を計算して返す
 app.post('/api/record', (req, res) => {
-  const { startTime, endTime } = req.body;
+  // 1. フロントエンドから送信されたデータを取得
+  const { startTime, endTime, breakDurationMinutes } = req.body;
 
-  // バリデーション（簡単なチェック）
+  // 2. バリデーション
   if (!startTime || !endTime) {
     return res.status(400).json({ error: '開始時刻と終了時刻は必須です。' });
   }
 
-  // データベースに保存
-  const sql = 'INSERT INTO records (start_time, end_time) VALUES (?, ?)';
-  connection.query(sql, [startTime, endTime], (err, result) => {
+  // 休憩時間が空かマイナスなら0にする
+  const breakMinutes = Math.max(0, parseInt(breakDurationMinutes || '0', 10));
+
+  // 3. データベースに保存
+  const sql = 'INSERT INTO records (start_time, end_time, break_duration_minutes) VALUES (?, ?, ?)';
+  const params = [startTime, endTime, breakMinutes];
+
+  connection.query(sql, params, (err, result) => {
     if (err) {
       console.error('データの保存に失敗しました: ', err);
       return res.status(500).json({ error: 'データベースへの保存に失敗しました。' });
     }
     console.log('データが正常に保存されました。');
 
-    // 稼働時間の計算
+    // 4. 稼働時間の計算
     const start = new Date(startTime);
     const end = new Date(endTime);
-    const diffMilliseconds = end - start; // ミリ秒単位の差
-    const diffHours = diffMilliseconds / 1000 / 60 / 60; // 時間単位に変換
+    const diffMilliseconds = end - start; // 総時間（ミリ秒）
 
-    // 計算結果をフロントエンドに返す
+    // 休憩時間（分）をミリ秒に変換して差し引く
+    const breakMilliseconds = breakMinutes * 60 * 1000;
+    const workMilliseconds = diffMilliseconds - breakMilliseconds;
+
+    const workHours = workMilliseconds / 1000 / 60 / 60; // 時間単位に変換
+
+    // 5. 計算結果をフロントエンドに返す
     res.json({
       message: '記録に成功しました！',
-      workHours: diffHours.toFixed(2) // 小数点第2位まで表示
+      workHours: workHours.toFixed(2)
     });
   });
 });

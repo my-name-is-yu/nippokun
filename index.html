@@ -17,6 +17,10 @@
             <input type="datetime-local" id="startTime" required>
         </div>
         <div>
+            <label for="breakDuration">休憩時間（分）:</label>
+            <input type="number" id="breakDuration" min="0" placeholder="例: 60">
+        </div>
+        <div>
             <label for="endTime">終了時刻:</label>
             <input type="datetime-local" id="endTime" required>
         </div>
@@ -36,14 +40,16 @@
 
         // formが送信されたときの処理
         reportForm.addEventListener('submit', async (event) => {
-            event.preventDefault(); // formのデフォルトの送信動作をキャンセル
+            event.preventDefault();
 
             // 入力された値を取得
             const startTime = document.getElementById('startTime').value;
             const endTime = document.getElementById('endTime').value;
+            const breakDurationMinutes = document.getElementById('breakDuration').value;
 
             // 結果表示エリアをクリア
             resultDiv.innerHTML = '';
+            resultDiv.className = '';
 
             try {
                 // バックエンドのAPIにPOSTリクエストを送信
@@ -52,31 +58,31 @@
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({
+                    body: JSON.stringify({ // 送信するデータ
                         startTime: startTime,
-                        endTime: endTime
+                        endTime: endTime,
+                        breakDurationMinutes: breakDurationMinutes
                     })
                 });
 
-                // レスポンスをJSONとしてパース
                 const data = await response.json();
 
                 if (response.ok) {
-                    // 成功した場合の処理
                     const workHours = data.workHours;
+                    resultDiv.className = 'result-success';
                     resultDiv.innerHTML = `
-                        <p style="color: green;">${data.message}</p>
-                        <p>本日の稼働時間: <strong>${workHours}</strong> 時間</p>
+                        <p>${data.message}</p>
+                        <p>本日の実働時間: <strong>${workHours}</strong> 時間</p>
                     `;
                 } else {
-                    // エラーが発生した場合の処理
-                    resultDiv.innerHTML = `<p style="color: red;">エラー: ${data.error}</p>`;
+                    resultDiv.className = 'result-error';
+                    resultDiv.innerHTML = `<p>エラー: ${data.error}</p>`;
                 }
 
             } catch (error) {
-                // 通信エラーなど
                 console.error('通信エラー:', error);
-                resultDiv.innerHTML = '<p style="color: red;">サーバーとの通信に失敗しました。</p>';
+                resultDiv.className = 'result-error';
+                resultDiv.innerHTML = '<p>サーバーとの通信に失敗しました。</p>';
             }
         });
     </script>
