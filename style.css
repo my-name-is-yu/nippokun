@@ -1,0 +1,10 @@
+body {
+  background-color: #f0f8ff; /* 背景を薄い水色に */
+  font-family: sans-serif;
+  text-align: center; /* 文字を中央揃えに */
+  padding-top: 50px;
+}
+
+h1 {
+  color: #333;
+}
